@@ -21,7 +21,7 @@ module.exports.createCard = (req, res) => {
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
         res.status(400).send({ message: 'Проверьте правильность введённых данных' });
-        return
+        return;
       }
       res.status(500).send({ message: 'Ошибка по умолчанию' });
     });

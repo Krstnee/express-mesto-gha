@@ -1,7 +1,7 @@
 const patchRequestOptions = {
-    new: true,
-    runValidators: true,
-    upsert: false,
-  };
+  new: true,
+  runValidators: true,
+  upsert: false,
+};
 
-  module.exports = patchRequestOptions;
+module.exports = patchRequestOptions;

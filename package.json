@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/Krstnee/express-mesto-gha#readme",
   "dependencies": {
+    "celebrate": "^15.0.1",
     "express": "^4.18.2",
     "mongoose": "^6.6.5"
   },

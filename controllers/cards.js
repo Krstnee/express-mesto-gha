@@ -42,7 +42,7 @@ module.exports.removeCardById = (req, res) => {
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.CastError) {
-        res.status(400).send({ message: 'По вашему запросу ничего не найдено' });
+        res.status(404).send({ message: 'По вашему запросу ничего не найдено' });
         return;
       }
       res.status(500).send({ message: 'Ошибка по умолчанию' });
@@ -71,7 +71,7 @@ module.exports.likeCardById = (req, res) => {
         return;
       }
       if (err instanceof mongoose.Error.CastError) {
-        res.status(400).send({ message: 'По вашему запросу ничего не найдено' });
+        res.status(404).send({ message: 'По вашему запросу ничего не найдено' });
         return;
       }
       res.status(500).send({ message: 'Ошибка по умолчанию' });
@@ -100,7 +100,7 @@ module.exports.unlikeCardById = (req, res) => {
         return;
       }
       if (err instanceof mongoose.Error.CastError) {
-        res.status(400).send({ message: 'По вашему запросу ничего не найдено' });
+        res.status(404).send({ message: 'По вашему запросу ничего не найдено' });
         return;
       }
       res.status(500).send({ message: 'Ошибка по умолчанию' });

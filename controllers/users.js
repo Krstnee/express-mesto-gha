@@ -25,9 +25,8 @@ module.exports.getUserById = (req, res) => {
       if (err instanceof mongoose.Error.CastError) {
         if (req.params.cardId.length !== 24) {
           res.status(errors.ERROR_CODE404).send({ message: 'Проверьте правильность запрашиваемых данных' });
-        } else {
-          res.status(errors.ERROR_CODE404).send({ message: 'По вашему запросу ничего не найдено' });
-        }
+          return;
+
         return;
       }
       res.status(errors.ERROR_CODE500).send({ message: 'Ошибка по умолчанию' });

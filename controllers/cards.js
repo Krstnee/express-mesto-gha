@@ -21,8 +21,8 @@ module.exports.createCard = (req, res) => {
   })
     .then((card) => res.send(card))
     .catch((err) => {
-      if (err instanceof mongoose.Error.CastError) {
-        res.status(errors.ERROR_CODE400).send({ message: 'Введен неправильный id' });
+      if (err instanceof mongoose.Error.ValidationError) {
+        res.status(errors.ERROR_CODE400).send({ message: 'Проверьте правильность введённых данных' });
         return;
       }
       res.status(errors.ERROR_CODE500).send({ message: 'Ошибка по умолчанию' });

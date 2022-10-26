@@ -1,9 +1,6 @@
 const mongoose = require('mongoose');
-
 const User = require('../models/user');
-
 const patchRequestOptions = require('../utils/utils');
-
 const errors = require('../utils/errors');
 
 module.exports.getAllUsers = (req, res) => {
@@ -15,6 +12,10 @@ module.exports.getAllUsers = (req, res) => {
 };
 
 module.exports.getUserById = (req, res) => {
+  if (req.params.userId.length !== 24) {
+    res.status(errors.ERROR_CODE400).send({ message: 'Проверьте правильность запрашиваемых данных' });
+    return;
+  }
   User.findById(req.params.userId)
     .then((user) => {
       if (!user) {
@@ -23,16 +24,12 @@ module.exports.getUserById = (req, res) => {
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.CastError) {
-        if (req.params.cardId.length !== 24) {
-          res.status(errors.ERROR_CODE404).send({ message: 'Проверьте правильность запрашиваемых данных' });
-          return;
-
+        res.status(errors.ERROR_CODE400).send({ message: 'По вашему запросу ничего не найдено' });
         return;
       }
       res.status(errors.ERROR_CODE500).send({ message: 'Ошибка по умолчанию' });
     });
 };
-
 module.exports.createUser = (req, res) => {
   const { name, about, avatar } = req.body;
   User.create({ name, about, avatar })
@@ -57,12 +54,12 @@ module.exports.updateProfile = (req, res) => {
       res.send(user);
     })
     .catch((err) => {
+      if (err instanceof mongoose.Error.ValidationError) {
+        res.status(errors.ERROR_CODE400).send({ message: 'Проверьте правильность введённых данных' });
+        return;
+      }
       if (err instanceof mongoose.Error.CastError) {
-        if (req.params.cardId.length !== 24) {
-          res.status(errors.ERROR_CODE404).send({ message: 'Проверьте правильность запрашиваемых данных' });
-        } else {
-          res.status(errors.ERROR_CODE404).send({ message: 'По вашему запросу ничего не найдено' });
-        }
+        res.status(errors.ERROR_CODE400).send({ message: 'По вашему запросу ничего не найдено' });
         return;
       }
       res.status(errors.ERROR_CODE500).send({ message: 'Ошибка по умолчанию' });
@@ -80,12 +77,12 @@ module.exports.updateAvatar = (req, res) => {
       res.send(user);
     })
     .catch((err) => {
+      if (err instanceof mongoose.Error.ValidationError) {
+        res.status(errors.ERROR_CODE400).send({ message: 'Проверьте правильность введённых данных' });
+        return;
+      }
       if (err instanceof mongoose.Error.CastError) {
-        if (req.params.cardId.length !== 24) {
-          res.status(errors.ERROR_CODE404).send({ message: 'Проверьте правильность запрашиваемых данных' });
-        } else {
-          res.status(errors.ERROR_CODE404).send({ message: 'По вашему запросу ничего не найдено' });
-        }
+        res.status(errors.ERROR_CODE400).send({ message: 'По вашему запросу ничего не найдено' });
         return;
       }
       res.status(errors.ERROR_CODE500).send({ message: 'Ошибка по умолчанию' });

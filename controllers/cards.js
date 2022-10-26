@@ -30,6 +30,10 @@ module.exports.createCard = (req, res) => {
 };
 
 module.exports.removeCardById = (req, res) => {
+  if (req.params.cardId.length !== 24) {
+    res.status(errors.ERROR_CODE400).send({ message: 'Проверьте правильность запрашиваемых данных' });
+    return;
+  }
   Card.findByIdAndRemove(req.params.cardId)
     .then((card) => {
       if (!card) {
@@ -40,11 +44,7 @@ module.exports.removeCardById = (req, res) => {
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.CastError) {
-        if (req.params.cardId.length !== 24) {
-          res.status(errors.ERROR_CODE404).send({ message: 'Проверьте правильность запрашиваемых данных' });
-        } else {
-          res.status(errors.ERROR_CODE404).send({ message: 'По вашему запросу ничего не найдено' });
-        }
+        res.status(errors.ERROR_CODE400).send({ message: 'По вашему запросу ничего не найдено' });
         return;
       }
       res.status(errors.ERROR_CODE500).send({ message: 'Ошибка по умолчанию' });
@@ -52,6 +52,10 @@ module.exports.removeCardById = (req, res) => {
 };
 
 module.exports.likeCardById = (req, res) => {
+  if (req.params.cardId.length !== 24) {
+    res.status(400).send({ message: 'Проверьте правильность запрашиваемых данных' });
+    return;
+  }
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $addToSet: { likes: req.user._id } },
@@ -64,12 +68,12 @@ module.exports.likeCardById = (req, res) => {
     }
   })
     .catch((err) => {
+      if (err instanceof mongoose.Error.ValidationError) {
+        res.status(errors.ERROR_CODE400).send({ message: 'Проверьте правильность введённых данных' });
+        return;
+      }
       if (err instanceof mongoose.Error.CastError) {
-        if (req.params.cardId.length !== 24) {
-          res.status(errors.ERROR_CODE404).send({ message: 'Проверьте правильность запрашиваемых данных' });
-        } else {
-          res.status(errors.ERROR_CODE404).send({ message: 'По вашему запросу ничего не найдено' });
-        }
+        res.status(errors.ERROR_CODE400).send({ message: 'По вашему запросу ничего не найдено' });
         return;
       }
       res.status(errors.ERROR_CODE500).send({ message: 'Ошибка по умолчанию' });
@@ -77,6 +81,10 @@ module.exports.likeCardById = (req, res) => {
 };
 
 module.exports.unlikeCardById = (req, res) => {
+  if (req.params.cardId.length !== 24) {
+    res.status(errors.ERROR_CODE400).send({ message: 'Проверьте правильность запрашиваемых данных' });
+    return;
+  }
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $pull: { likes: req.user._id } },
@@ -89,12 +97,12 @@ module.exports.unlikeCardById = (req, res) => {
     }
   })
     .catch((err) => {
+      if (err instanceof mongoose.Error.ValidationError) {
+        res.status(errors.ERROR_CODE400).send({ message: 'Проверьте правильность введённых данных' });
+        return;
+      }
       if (err instanceof mongoose.Error.CastError) {
-        if (req.params.cardId.length !== 24) {
-          res.status(errors.ERROR_CODE404).send({ message: 'Проверьте правильность запрашиваемых данных' });
-        } else {
-          res.status(errors.ERROR_CODE404).send({ message: 'По вашему запросу ничего не найдено' });
-        }
+        res.status(errors.ERROR_CODE400).send({ message: 'По вашему запросу ничего не найдено' });
         return;
       }
       res.status(errors.ERROR_CODE500).send({ message: 'Ошибка по умолчанию' });

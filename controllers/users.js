@@ -20,7 +20,7 @@ module.exports.getUserById = (req, res) => {
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.CastError) {
-        res.status(errors.ERROR_CODE400).send({ message: 'По вашему запросу ничего не найдено ' });
+        res.status(errors.ERROR_CODE400).send({ message: 'По вашему запросу ничего не найдено или введен неправильный id' });
         return;
       }
       res.status(errors.ERROR_CODE500).send({ message: 'Ошибка по умолчанию' });
@@ -50,6 +50,10 @@ module.exports.updateProfile = (req, res) => {
       res.send(user);
     })
     .catch((err) => {
+      if (err instanceof mongoose.Error.ValidationError) {
+        res.status(errors.ERROR_CODE400).send({ message: 'Проверьте правильность введённых данных' });
+        return;
+      }
       if (err instanceof mongoose.Error.CastError) {
         res.status(errors.ERROR_CODE400).send({ message: 'По вашему запросу ничего не найдено или введен неправильный id' });
         return;

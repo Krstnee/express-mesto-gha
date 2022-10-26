@@ -12,10 +12,6 @@ module.exports.getAllUsers = (req, res) => {
 };
 
 module.exports.getUserById = (req, res) => {
-  if (req.params.userId.length !== 24) {
-    res.status(errors.ERROR_CODE400).send({ message: 'Проверьте правильность запрашиваемых данных' });
-    return;
-  }
   User.findById(req.params.userId)
     .then((user) => {
       if (!user) {

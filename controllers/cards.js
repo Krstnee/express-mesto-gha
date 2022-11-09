@@ -1,18 +1,20 @@
 const mongoose = require('mongoose');
+const DefaultError = require('../utils/errors/DefaultError');
+const ValidationError = require('../utils/errors/ValidationError');
+const NotFoundError = require('../utils/errors/NotFoundError');
+const NotAllowedError = require('../utils/errors/NotAllowedError');
 
 const Card = require('../models/card');
 
-const patchRequestOptions = require('../utils/utils');
+const { patchRequestOptions } = require('../utils/utils');
 
-const errors = require('../utils/errors');
-
-module.exports.getAllCards = (req, res) => {
+module.exports.getAllCards = (req, res, next) => {
   Card.find({})
     .then((cards) => res.send(cards))
-    .catch(() => res.status(errors.ERROR_CODE500).send({ message: 'Ошибка по умолчанию' }));
+    .catch(() => next(new DefaultError('На сервере произошла ошибка')));
 };
 
-module.exports.createCard = (req, res) => {
+module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
   const { _id } = req.user;
 
@@ -21,70 +23,102 @@ module.exports.createCard = (req, res) => {
   })
     .then((card) => res.send(card))
     .catch((err) => {
-      if (err instanceof mongoose.Error.ValidationError) {
-        res.status(errors.ERROR_CODE400).send({ message: 'Проверьте правильность введённых данных' });
+      if (err.statusCode) {
+        next(err);
         return;
       }
-      res.status(errors.ERROR_CODE500).send({ message: 'Ошибка по умолчанию' });
+      if (err instanceof mongoose.Error.ValidationError) {
+        next(new ValidationError('Проверьте правильность введённых данных'));
+        return;
+      }
+      next(new DefaultError('На сервере произошла ошибка'));
     });
 };
 
-module.exports.removeCardById = (req, res) => {
-  Card.findByIdAndRemove(req.params.cardId)
+module.exports.removeCardById = (req, res, next) => {
+  Card.findById(req.params.cardId)
     .then((card) => {
       if (!card) {
-        res.status(errors.ERROR_CODE404).send({ message: 'Такой карточки не существует' });
+        throw new NotFoundError('Такой карточки не существует');
+      } else if (req.user._id !== card.owner._id.toString()) {
+        throw new NotAllowedError('у вас нет прав на удаление этой карточки');
       } else {
-        res.send(card);
+        Card.findByIdAndRemove(req.params.cardId)
+          .then(() => { res.send(card); })
+          .catch((err) => {
+            if (err.statusCode) {
+              next(err);
+            } else { next(new DefaultError('Что-то пошло не так')); }
+          });
       }
     })
     .catch((err) => {
-      if (err instanceof mongoose.Error.CastError) {
-        res.status(errors.ERROR_CODE400).send({ message: 'По вашему запросу ничего не найдено или введен неправильный id' });
+      if (err.statusCode) {
+        next(err);
         return;
       }
-      res.status(errors.ERROR_CODE500).send({ message: 'Ошибка по умолчанию' });
+      if (err instanceof mongoose.Error.CastError) {
+        next(new NotFoundError('По вашему запросу ничего не найдено'));
+        return;
+      }
+      next(new DefaultError('Ошибка по умолчанию'));
     });
 };
 
-module.exports.likeCardById = (req, res) => {
+module.exports.likeCardById = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $addToSet: { likes: req.user._id } },
     patchRequestOptions,
   ).then((card) => {
     if (!card) {
-      res.status(errors.ERROR_CODE404).send({ message: 'Вы обращаетесь к несуществующей карточке' });
+      throw new NotFoundError('Вы обращаетесь к несуществующей карточке');
     } else {
       res.send(card);
     }
   })
     .catch((err) => {
-      if (err instanceof mongoose.Error.CastError) {
-        res.status(errors.ERROR_CODE400).send({ message: 'По вашему запросу ничего не найдено или введен неправильный id' });
+      if (err.statusCode) {
+        next(err);
         return;
       }
-      res.status(errors.ERROR_CODE500).send({ message: 'Ошибка по умолчанию' });
+      if (err instanceof mongoose.Error.ValidationError) {
+        next(new ValidationError('Проверьте правильность введённых данных'));
+        return;
+      }
+      if (err instanceof mongoose.Error.CastError) {
+        next(new ValidationError('По вашему запросу ничего не найдено'));
+        return;
+      }
+      next(new DefaultError('На сервере произошла ошибка'));
     });
 };
 
-module.exports.unlikeCardById = (req, res) => {
+module.exports.unlikeCardById = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $pull: { likes: req.user._id } },
     patchRequestOptions,
   ).then((card) => {
     if (!card) {
-      res.status(errors.ERROR_CODE404).send({ message: 'Вы обращаетесь к несуществующей карточке' });
+      throw new NotFoundError('Вы обращаетесь к несуществующей карточке');
     } else {
       res.send(card);
     }
   })
     .catch((err) => {
-      if (err instanceof mongoose.Error.CastError) {
-        res.status(errors.ERROR_CODE400).send({ message: 'По вашему запросу ничего не найдено или введен неправильный id' });
+      if (err.statusCode) {
+        next(err);
         return;
       }
-      res.status(errors.ERROR_CODE500).send({ message: 'Ошибка по умолчанию' });
+      if (err instanceof mongoose.Error.ValidationError) {
+        next(new ValidationError('Проверьте правильность введённых данных'));
+        return;
+      }
+      if (err instanceof mongoose.Error.CastError) {
+        next(new ValidationError('По вашему запросу ничего не найдено'));
+        return;
+      }
+      next(new DefaultError('На сервере произошла ошибка'));
     });
 };

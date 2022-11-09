@@ -1,82 +1,110 @@
 const mongoose = require('mongoose');
-const User = require('../models/user');
-const patchRequestOptions = require('../utils/utils');
-const errors = require('../utils/errors');
+const bcrypt = require('bcryptjs');
+const DefaultError = require('../utils/errors/DefaultError');
+const ValidationError = require('../utils/errors/ValidationError');
+const NotFoundError = require('../utils/errors/NotFoundError');
+const UserExistError = require('../utils/errors/UserExistError');
 
-module.exports.getAllUsers = (req, res) => {
+const User = require('../models/user');
+
+const { patchRequestOptions } = require('../utils/utils');
+
+module.exports.getAllUsers = (req, res, next) => {
   User.find({})
     .then((users) => res.send(users))
     .catch(() => {
-      res.status(errors.ERROR_CODE500).send({ message: 'Ошибка по умолчанию' });
+      next(new DefaultError('Ошибка сервера'));
     });
 };
 
-module.exports.getUserById = (req, res) => {
+module.exports.getUserById = (req, res, next) => {
   User.findById(req.params.userId)
     .then((user) => {
       if (!user) {
-        res.status(errors.ERROR_CODE404).send({ message: 'Пользователь с такими данными не найден' });
+        throw new NotFoundError('Пользователь с такими данными не найден');
       } else { res.send(user); }
     })
     .catch((err) => {
-      if (err instanceof mongoose.Error.CastError) {
-        res.status(errors.ERROR_CODE400).send({ message: 'По вашему запросу ничего не найдено или введен неправильный id' });
+      if (err.statusCode) {
+        next(err);
+        return;
+      } if (err instanceof mongoose.Error.CastError) {
+        next(new ValidationError('По вашему запросу ничего не найдено'));
         return;
       }
-      res.status(errors.ERROR_CODE500).send({ message: 'Ошибка по умолчанию' });
-    });
-};
-module.exports.createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
-    .then((user) => res.send(user))
-    .catch((err) => {
-      if (err instanceof mongoose.Error.ValidationError) {
-        res.status(errors.ERROR_CODE400).send({ message: 'Проверьте правильность введённых данных' });
-        return;
-      }
-      res.status(errors.ERROR_CODE500).send({ message: 'Ошибка по умолчанию' });
+      next(new DefaultError('Ошибка сервера'));
     });
 };
 
-module.exports.updateProfile = (req, res) => {
+module.exports.createUser = (req, res, next) => {
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
+  bcrypt.hash(password, 10)
+    .then((hash) => User.create({
+      name, about, avatar, email, password: hash,
+    }))
+    .then((user) => res.send(user))
+    .catch((err) => {
+      if (err.statusCode) {
+        next(err);
+      } else if (err instanceof mongoose.Error.ValidationError) {
+        next(new ValidationError('Проверьте правильность введённых данных'));
+      } else if (err.code === 11000) {
+        next(new UserExistError('Пользователь с такими данными существует'));
+      } else {
+        next(new DefaultError('Проверьте правильность введённых данных'));
+      }
+    });
+};
+
+module.exports.updateProfile = (req, res, next) => {
   const { name, about } = req.body;
   User.findByIdAndUpdate(req.user._id, { name, about }, patchRequestOptions)
     .then((user) => {
       if (!user) {
-        res.status(errors.ERROR_CODE404).send({ message: 'Пользователя с такими данными не существует' });
-        return;
+        throw new NotFoundError('Проверьте правильность введённых данных');
       }
       res.send(user);
     })
     .catch((err) => {
-      if (err instanceof mongoose.Error.ValidationError) {
-        res.status(errors.ERROR_CODE400).send({ message: 'Проверьте правильность введённых данных' });
-        return;
-      }
-      if (err instanceof mongoose.Error.CastError) {
-        res.status(errors.ERROR_CODE400).send({ message: 'По вашему запросу ничего не найдено или введен неправильный id' });
-        return;
-      }
-      res.status(errors.ERROR_CODE500).send({ message: 'Ошибка по умолчанию' });
+      if (err.statusCode) {
+        next(err);
+      } else if (err instanceof mongoose.Error.ValidationError) {
+        next(new ValidationError('Проверьте правильность введённых данных'));
+      } else if (err instanceof mongoose.Error.CastError) {
+        next(new ValidationError('По вашему запросу ничего не найдено'));
+      } else next(new DefaultError('На сервере произошла ошибка'));
     });
 };
 
-module.exports.updateAvatar = (req, res) => {
+module.exports.updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
   User.findByIdAndUpdate(req.user._id, { avatar }, patchRequestOptions)
     .then((user) => {
       if (!user) {
-        res.status(errors.ERROR_CODE404).send({ message: 'Пользователя с такими данными не существует' });
-        return;
+        throw new NotFoundError('Пользователя с такими данными не существует');
       }
       res.send(user);
     })
     .catch((err) => {
-      if (err instanceof mongoose.Error.CastError) {
-        res.status(errors.ERROR_CODE400).send({ message: 'По вашему запросу ничего не найдено или введен неправильный id' });
-        return;
+      if (err.statusCode) {
+        next(err);
+      } else if (err instanceof mongoose.Error.ValidationError) {
+        next(new ValidationError('Проверьте правильность введённых данных'));
+      } else if (err instanceof mongoose.Error.CastError) {
+        next(new ValidationError('По вашему запросу ничего не найдено'));
+      } else next(new DefaultError('На сервере произошла ошибка'));
+    });
+};
+
+module.exports.getMyProfile = (req, res, next) => {
+  User.findById(req.user._id)
+    .then((user) => res.send(user))
+    .catch((err) => {
+      if (err.statusCode) {
+        return next(err);
       }
-      res.status(errors.ERROR_CODE500).send({ message: 'Ошибка по умолчанию' });
+      return next(new DefaultError('что-то пошло не'));
     });
 };

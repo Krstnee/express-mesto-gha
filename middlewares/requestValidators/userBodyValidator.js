@@ -8,6 +8,6 @@ module.exports = celebrate({
     about: Joi.string().min(2).max(30),
     avatar: Joi.string().pattern(URL_REGEXP),
     email: Joi.string().required().email(),
-    password: Joi.string().required().min(4),
+    password: Joi.string().required(),
   }),
 });

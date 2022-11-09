@@ -1,5 +1,5 @@
 const { celebrate, Joi } = require('celebrate');
-const URL_REGEXP = require('../../utils/urlRegexp');
+const URL_REGEXP = require('../utils/urlRegexp');
 
 module.exports = celebrate({
   body: Joi.object().keys({
